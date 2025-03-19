@@ -1,4 +1,4 @@
-# trycatcher
+# node-trycatcher
 TryCatcher is a lightweight TypeScript library that simplifies error handling in Node.js with custom error classes, safe promise handling, and Express integration.
 
 ## Features
@@ -14,7 +14,7 @@ TryCatcher is a lightweight TypeScript library that simplifies error handling in
 ## Installation
 
 ```bash
-npm install trycatcher
+npm install node-trycatcher
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ npm install trycatcher
 ### Custom Error Classes
 
 ```typescript
-import { AppError, NotFoundError, ValidationError } from 'trycatcher';
+import { AppError, NotFoundError, ValidationError } from 'node-trycatcher';
 
 // Create a custom error
 throw new NotFoundError('User not found', { userId: 123 });
@@ -38,7 +38,7 @@ throw new AppError('Something went wrong', {
 ### Safe Error Handling with Result Type
 
 ```typescript
-import { tryCatch } from 'trycatcher';
+import { tryCatch } from 'node-trycatcher';
 
 async function getUserData(userId: string) {
   const result = await tryCatch(fetchUserFromDatabase(userId));
@@ -55,7 +55,7 @@ async function getUserData(userId: string) {
 ### Retry Mechanism
 
 ```typescript
-import { retry } from 'trycatcher';
+import { retry } from 'node-trycatcher';
 
 const data = await retry(
   () => fetchFromUnreliableAPI(),
@@ -71,7 +71,7 @@ const data = await retry(
 ### Timeout Handling
 
 ```typescript
-import { withTimeout } from 'trycatcher';
+import { withTimeout } from 'node-trycatcher';
 
 try {
   const result = await withTimeout(
@@ -88,8 +88,8 @@ try {
 
 ```typescript
 import express from 'express';
-import { errorHandler, asyncHandler } from 'trycatcher/express';
-import { NotFoundError } from 'trycatcher';
+import { errorHandler, asyncHandler } from 'node-trycatcher/express';
+import { NotFoundError } from 'node-trycatcher';
 
 const app = express();
 
@@ -110,7 +110,7 @@ app.use(errorHandler);
 ### Global Error Handlers
 
 ```typescript
-import { setupGlobalErrorHandlers } from 'trycatcher';
+import { setupGlobalErrorHandlers } from 'node-trycatcher';
 
 setupGlobalErrorHandlers((error, type) => {
   console.error(`Uncaught ${type}:`, error);

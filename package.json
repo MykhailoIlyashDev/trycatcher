@@ -1,6 +1,6 @@
 {
-  "name": "trycatcher",
-  "version": "1.0.0",
+  "name": "node-trycatcher",
+  "version": "1.0.1",
   "description": "A lightweight error handling trycatcher for Node.js applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
