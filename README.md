@@ -9,6 +9,9 @@ TryCatcher is a lightweight TypeScript library that simplifies error handling in
 - Express middleware integration
 - Timeout handling
 - Retry mechanism
+- Rate limiting
+- Cancellable promises
+- Batch processing
 - Global error handlers
 
 ## Installation
@@ -52,6 +55,23 @@ async function getUserData(userId: string) {
 }
 ```
 
+### Alternative Safe Error Handling with Tuple
+
+```typescript
+import { safe } from 'node-trycatcher';
+
+async function getUserData(userId: string) {
+  const [error, data] = await safe(fetchUserFromDatabase(userId));
+  
+  if (error) {
+    console.error('Failed to fetch user:', error);
+    return null;
+  }
+  
+  return data;
+}
+```
+
 ### Retry Mechanism
 
 ```typescript
@@ -82,6 +102,71 @@ try {
 } catch (error) {
   console.log('Operation took too long');
 }
+```
+
+### Rate Limiting
+
+```typescript
+import { rateLimit } from 'node-trycatcher';
+
+// Create a rate-limited version of your API call function
+const rateLimitedFetch = rateLimit(fetchFromAPI, {
+  maxCalls: 5,
+  perInterval: 1000 // 1 second
+});
+
+// Use it like the original function
+const results = await Promise.all([
+  rateLimitedFetch('id1'),
+  rateLimitedFetch('id2'),
+  rateLimitedFetch('id3'),
+  rateLimitedFetch('id4'),
+  rateLimitedFetch('id5'),
+  rateLimitedFetch('id6'), // This will be queued
+  rateLimitedFetch('id7')  // This will be queued
+]);
+```
+
+### Cancellable Promises
+
+```typescript
+import { withCancel } from 'node-trycatcher';
+
+const { promise, cancel } = withCancel(longRunningOperation());
+
+// Cancel the operation after 2 seconds
+setTimeout(() => {
+  console.log('Cancelling operation...');
+  cancel();
+}, 2000);
+
+try {
+  const result = await promise;
+  console.log('Operation completed:', result);
+} catch (error) {
+  console.log('Operation was cancelled or failed:', error.message);
+}
+```
+
+### Batch Processing
+
+```typescript
+import { batch } from 'node-trycatcher';
+
+const items = ['item1', 'item2', 'item3', 'item4', 'item5', 'item6', 'item7', 'item8', 'item9', 'item10'];
+
+const results = await batch(
+  items,
+  async (item) => {
+    // Process each item
+    return await processItem(item);
+  },
+  {
+    size: 3,         // Process 3 items per batch
+    delay: 500,      // Wait 500ms between batches
+    concurrency: 2   // Allow 2 concurrent operations
+  }
+);
 ```
 
 ### Express Integration

@@ -162,6 +162,131 @@ export async function retry<T>(
 }
 
 /**
+ * Creates a rate-limited version of a function
+ */
+export function rateLimit<T, Args extends any[]>(
+  fn: (...args: Args) => Promise<T>,
+  options: {
+    maxCalls: number;
+    perInterval: number;
+  }
+): (...args: Args) => Promise<T> {
+  const queue: Array<{
+    args: Args;
+    resolve: (value: T) => void;
+    reject: (error: Error) => void;
+  }> = [];
+  
+  let callsMade = 0;
+  let interval: NodeJS.Timeout | null = null;
+  
+  const processQueue = async () => {
+    if (queue.length === 0 || callsMade >= options.maxCalls) {
+      return;
+    }
+    
+    const { args, resolve, reject } = queue.shift()!;
+    callsMade++;
+    
+    try {
+      const result = await fn(...args);
+      resolve(result);
+    } catch (error) {
+      reject(error as Error);
+    }
+    
+    if (queue.length > 0) {
+      processQueue();
+    }
+  };
+  
+  const resetCalls = () => {
+    callsMade = 0;
+    processQueue();
+  };
+  
+  return async (...args: Args): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      queue.push({ args, resolve, reject });
+      
+      if (interval === null) {
+        interval = setInterval(resetCalls, options.perInterval);
+      }
+      
+      processQueue();
+    });
+  };
+}
+
+/**
+ * Safely awaits a promise and returns [error, result] tuple
+ */
+export async function safe<T>(promise: Promise<T>): Promise<[Error | null, T | null]> {
+  try {
+    const result = await promise;
+    return [null, result];
+  } catch (error) {
+    return [error as Error, null];
+  }
+}
+
+/**
+ * Creates a cancellable promise
+ */
+export function withCancel<T>(promise: Promise<T>): { 
+  promise: Promise<T>; 
+  cancel: () => void 
+} {
+  let isCancelled = false;
+  
+  const wrappedPromise = new Promise<T>((resolve, reject) => {
+    promise.then(
+      value => isCancelled ? reject(new AppError('Operation cancelled', { code: 'CANCELLED' })) : resolve(value),
+      error => reject(error)
+    );
+  });
+  
+  return {
+    promise: wrappedPromise,
+    cancel: () => { isCancelled = true; }
+  };
+}
+
+/**
+ * Processes items in batches
+ */
+export async function batch<T, R>(
+  items: T[],
+  processor: (item: T) => Promise<R>,
+  options: {
+    size?: number;
+    delay?: number;
+    concurrency?: number;
+  } = {}
+): Promise<R[]> {
+  const size = options.size || 10;
+  const delay = options.delay || 0;
+  const concurrency = options.concurrency || size;
+  
+  const results: R[] = [];
+  
+  for (let i = 0; i < items.length; i += size) {
+    const batch = items.slice(i, i + size);
+    const batchResults = await Promise.all(
+      batch.map(item => processor(item))
+    );
+    
+    results.push(...batchResults);
+    
+    if (delay > 0 && i + size < items.length) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  
+  return results;
+}
+
+/**
  * Creates a timeout for a promise
  */
 export function withTimeout<T>(

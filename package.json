@@ -1,9 +1,13 @@
 {
   "name": "node-trycatcher",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A lightweight error handling trycatcher for Node.js applications",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./express": "./dist/express.js"
+  },
   "scripts": {
     "build": "tsc",
     "prepublishOnly": "npm run build"
@@ -45,6 +49,5 @@
   },
   "homepage": "https://github.com/MykhailoIlyashDev/trycatcher#readme",
   "dependencies": {
-    "express": "^4.21.2"
   }
 }
